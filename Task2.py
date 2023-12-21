@@ -1,20 +1,16 @@
 import glob
 import numpy as np
 from PIL import Image
+import os
+from sklearn.metrics import mean_squared_error
+
 import torch
 from torch import nn
 from torch.utils import data
 from torchvision import transforms
 
 
-def read_column(file_path, i):
-    with open(file_path, 'r') as file:
-        lines = file.readlines()
-        column = [float(line.strip().split(' ')[i]) for line in lines]
-        if i == 3:
-            column = [float(line.strip().split(' ')[i].replace("\n", "")) for line in lines]
 
-    return column
 
 
 class Mydataset(data.Dataset):
@@ -114,7 +110,7 @@ class Vgg16_net(nn.Module):
             nn.Linear(1024, 256),
             nn.ReLU(inplace=True),
 
-            nn.Linear(256, 1)
+            nn.Linear(256, 3)
         )
 
     def forward(self, x):
@@ -152,13 +148,45 @@ def fit(epoch, model,loss_fn, optim, train_dl, test_dl):
     test_loss = test_running_loss / len(test_dl.dataset)
     print('epoch: ', epoch, 'train_loss： ', round(train_loss, 3), 'test_loss： ', round(test_loss, 3),)
 
+def read_columns(file_path):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+        labels = [list(map(float, line.strip().split(' ')[:3])) for line in lines]
+    return np.array(labels)
+
+def evaluate_regression(model, test_loader):
+    model.eval()  # 将模型设置为评估模式
+    actuals = []
+    predictions = []
+    
+    with torch.no_grad():  # 确保在评估过程中不更新梯度
+        for data, targets in test_loader:
+            if torch.cuda.is_available():
+                data, targets = data.to('cuda'), targets.to('cuda')
+
+            outputs = model(data)
+            predictions.extend(outputs.cpu().numpy())
+            actuals.extend(targets.cpu().numpy())
+
+    actuals = np.array(actuals)
+    predictions = np.array(predictions)
+
+    mse = mean_squared_error(actuals, predictions)
+    rmse = np.sqrt(mse)
+    mae = mean_absolute_error(actuals, predictions)
+    r2 = r2_score(actuals, predictions)
+
+    print("The over all are showed like these:")
+    print("MSE:", mse)
+    print("RMSE:", rmse)
+    print("MAE:", mae)
+    print("R² score:", r2)
 
 if __name__ == "__main__" :
-    imagePaths = glob.glob(".\\Data\\genki4k\\files\\*.jpg")
-    # Which parameter to predict   i =1~3
-    i = 1
-    labelPaths = read_column(".\\Data\\genki4k\\labels.txt", i)
-    print(labelPaths)
+    imagePaths = glob.glob("Data/genki4k/files/*.jpg")
+    labelPaths = read_columns("Data/genki4k/labels.txt")
+
+    # print(labelPaths)
     transform = transforms.Compose([
         transforms.Resize((128, 128)),
         transforms.ToTensor(),
@@ -166,31 +194,53 @@ if __name__ == "__main__" :
     index = np.random.permutation(len(imagePaths))
     all_imgs_path = np.array(imagePaths)[index]
     all_labels = np.array(labelPaths)[index]
-    print(all_labels)
-    print(all_imgs_path)
+    # print(all_labels)
+    # print(all_imgs_path)
 
-    s = int(len(all_imgs_path) * 0.8)
-    train_imgs = all_imgs_path[:s]
-    train_labels = all_labels[:s]
-    val_imgs = all_imgs_path[s:]
-    val_labels = all_labels[s:]
+    # 保存
+    save_dir = 'save/Task2'
+    os.makedirs(save_dir, exist_ok=True)
 
+    # 定义训练集、验证集和测试集的大小
+    train_size = int(len(all_imgs_path) * 0.7)
+    val_size = int(len(all_imgs_path) * 0.15)
+
+    # 划分训练集、验证集和测试集
+    train_imgs = all_imgs_path[:train_size]
+    train_labels = all_labels[:train_size]
+    val_imgs = all_imgs_path[train_size:train_size+val_size]
+    val_labels = all_labels[train_size:train_size+val_size]
+    test_imgs = all_imgs_path[train_size+val_size:]
+    test_labels = all_labels[train_size+val_size:]
+
+    # 创建数据集
     train_ds = Mydataset(train_imgs, train_labels, transform)
-    test_ds = Mydataset(val_imgs, val_labels, transform)
+    val_ds = Mydataset(val_imgs, val_labels, transform)
+    test_ds = Mydataset(test_imgs, test_labels, transform)
+
+
     train_dl = data.DataLoader(train_ds, batch_size=2, shuffle=True)
-    test_dl = data.DataLoader(test_ds, batch_size=2, shuffle=False)
+    val_dl = data.DataLoader(val_ds, batch_size=2, shuffle=False)
+    test_dl = data.DataLoader(test_ds, batch_size=2, shuffle = False)
 
     model = Vgg16_net()
     if torch.cuda.is_available():
         model.to('cuda')
-    loss_fn = nn.L1Loss()
+    loss_fn = nn.MSELoss()
+
     optim = torch.optim.SGD(model.parameters(), lr=0.0001)
-    epochs = 20
+    epochs = 30
 
     # train
     for epoch in range(epochs):
-        fit(epoch, model, loss_fn, optim, train_dl, test_dl)
+        fit(epoch, model, loss_fn, optim, train_dl, val_dl)
 
+        # 保存模型
+    save_path = os.path.join(save_dir, f'model_epoch_{epoch}.pth')
+    torch.save(model.state_dict(), save_path)
+    print(f'Model saved to {save_path}')
 
     print("Finsh Training！")
+
+    evaluate_regression(model, test_dl)
 

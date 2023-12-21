@@ -2,7 +2,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 import cv2
 import torch
-from Task1 import Vgg16_net
+from Task2 import Vgg16_net
 from torchvision import transforms
 
 # 定义转换：调整大小和转换为张量
@@ -13,7 +13,7 @@ transform = transforms.Compose([
 
 # 加载模型
 model = Vgg16_net()
-model.load_state_dict(torch.load('save/model_epoch_9.pth'))
+model.load_state_dict(torch.load('save/Task2/model_epoch_29.pth'))
 model.eval()
 
 # 启动摄像头并进行预测

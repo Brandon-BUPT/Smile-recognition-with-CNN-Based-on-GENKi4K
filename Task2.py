@@ -2,7 +2,7 @@ import glob
 import numpy as np
 from PIL import Image
 import os
-from sklearn.metrics import mean_squared_error
+import sklearn
 
 import torch
 from torch import nn
@@ -171,7 +171,7 @@ def evaluate_regression(model, test_loader):
     actuals = np.array(actuals)
     predictions = np.array(predictions)
 
-    mse = mean_squared_error(actuals, predictions)
+    mse = metrics.mean_squared_error(actuals, predictions)
     rmse = np.sqrt(mse)
     mae = mean_absolute_error(actuals, predictions)
     r2 = r2_score(actuals, predictions)

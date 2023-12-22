@@ -1,0 +1,13 @@
+Epoch: 23, Train Loss: 0.012, Test Loss: 0.020
+Epoch 25/30: 100%|██████████| 700/700 [00:29<00:00, 24.01batch/s, loss=0.0111]
+Epoch: 24, Train Loss: 0.011, Test Loss: 0.021
+Epoch 26/30: 100%|██████████| 700/700 [00:29<00:00, 23.37batch/s, loss=0.00851]
+Epoch: 25, Train Loss: 0.009, Test Loss: 0.024
+Epoch 27/30: 100%|██████████| 700/700 [00:30<00:00, 23.26batch/s, loss=0.00855]
+Epoch: 26, Train Loss: 0.009, Test Loss: 0.016
+Epoch 28/30: 100%|██████████| 700/700 [00:29<00:00, 23.44batch/s, loss=0.00744]
+Epoch: 27, Train Loss: 0.007, Test Loss: 0.020
+Epoch 29/30: 100%|██████████| 700/700 [00:29<00:00, 23.61batch/s, loss=0.00702]
+Epoch: 28, Train Loss: 0.007, Test Loss: 0.017
+Epoch 30/30: 100%|██████████| 700/700 [00:28<00:00, 24.60batch/s, loss=0.00597]
+Epoch: 29, Train Loss: 0.006, Test Loss: 0.014

@@ -1,2 +1,2 @@
 # Smile-recognition-with-CNN-Based-on-GENKi4K
-已经完成了第一个任务，睡了
+第二个任务完成，报告未写完
